@@ -100,11 +100,36 @@ def connectClosestPoints(data, connetion):
     return clusters
 
 
+def connectClusters(clusters):
+    for i, cluster in enumerate(clusters):
+        maxDistanceInCluster = max([distanceBetweenPoints(x, y) for x in cluster for y in cluster])
+        y = 0
+        while y < len(clusters):
+            if i != y:
+                flag = 0
+                for point in cluster:
+                    for candidate in clusters[y]:
+                        if maxDistanceInCluster > distanceBetweenPoints(point, candidate):
+                            cluster.extend(clusters[y])
+                            clusters.pop(y)
+                            flag = 1
+                            break
+                    if flag == 1:
+                        break
+            y += 1
+
+
 def myClusterization(data):
     connection = findClosestPoints(data)
     showClosestPointsConnection(data, connection)
     clusters = connectClosestPoints(data, connection)
     showClusters(clusters)
+    clustersNumber = 0
+
+    while clustersNumber != len(clusters):
+        clustersNumber = len(clusters)
+        connectClusters(clusters)
+        showClusters(clusters)
 
 
 if __name__ == '__main__':
