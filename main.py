@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
+MAX_DISTANCE_RATIO = 1.5
 MIN_ATTR = 10
 MAX_ATTR = 90
 R = 2
@@ -100,23 +101,38 @@ def connectClosestPoints(data, connetion):
     return clusters
 
 
-def connectClusters(clusters):
+def findClustersToConnect(clusters):
+    toConnect = [[] for _ in  range(len(clusters))]
+
     for i, cluster in enumerate(clusters):
-        maxDistanceInCluster = max([distanceBetweenPoints(x, y) for x in cluster for y in cluster])
-        y = 0
-        while y < len(clusters):
+        maxDistanceInCluster = max([distanceBetweenPoints(x, y) for x in cluster for y in cluster]) * MAX_DISTANCE_RATIO
+        for y, candidates in enumerate(clusters):
             if i != y:
                 flag = 0
                 for point in cluster:
                     for candidate in clusters[y]:
                         if maxDistanceInCluster > distanceBetweenPoints(point, candidate):
-                            cluster.extend(clusters[y])
-                            clusters.pop(y)
+                            toConnect[i].append(y)
                             flag = 1
                             break
                     if flag == 1:
                         break
-            y += 1
+    return toConnect
+
+
+def connectClusters(clusters, toConnect):
+    for i, clusterConnections in enumerate(toConnect):
+        for connection in clusterConnections:
+            if i != connection:
+                toConnect[i].extend(toConnect[connection])
+                clusters[i].extend(clusters[connection])
+                clusters.pop(connection)
+                toConnect.pop(connection)
+                clusters.insert(connection, [])
+                toConnect.insert(connection, [])
+    for i, cluster in enumerate(clusters):
+        if len(cluster) == 0:
+            clusters.pop(i)
 
 
 def myClusterization(data):
@@ -128,12 +144,14 @@ def myClusterization(data):
 
     while clustersNumber != len(clusters):
         clustersNumber = len(clusters)
-        connectClusters(clusters)
+        toConnect = findClustersToConnect(clusters)
+        connectClusters(clusters, toConnect)
         showClusters(clusters)
 
 
 if __name__ == '__main__':
     data = crateData(random.randint(100, 300), random.randint(3, 6))
+    # data = crateData(random.randint(10, 30), random.randint(2, 3))
     showData(data)
     myClusterization(data)
 
